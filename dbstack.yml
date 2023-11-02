@@ -1,0 +1,227 @@
+services:
+  ignition-start:
+    #image: inductiveautomation/ignition:nightly
+    image: inductiveautomation/ignition:${IGN_VERSION:-latest}
+    container_name: ${IGN_CONTAINER:-ignition-demo}
+    hostname: ${IGN_HOSTNAME:-ignition-demo}
+    user: 0:0
+    volumes:
+      - ignData:/usr/local/bin/ignition/data
+      #Ignition module seeds
+      - ./data/MQTT-Engine-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Engine.modl
+      - ./data/MQTT-Distributor-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Distributor.modl
+      - ./data/MQTT-Transmission-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Transmission.modl
+      - ./data/MongoDB Connector-module.modl:/usr/local/bin/ignition/user-lib/modules/MongoDB Connector-module.modl
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_HOSTNAME:-ignition-demo}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_EDITION:-standard}
+      TZ: ${IGN_TZ:-America/NewYork}
+    command: >
+      -n ${IGN_GATEWAY_NAME:-Demo}
+      -h 80
+      -s 443
+      -a ${IGN_HOSTNAME:-ignition-demo}.${IGN_HOSTNAME:-localtest.me}
+      --
+      -Dignition.projects.scanFrequency=10
+    networks:
+      - default
+
+  #-----------------------------------------------------------------------------------------------------------------------------  
+  #Postgres Ignition Connection Settings
+      #Name: Postgres
+      #Username: ignition
+      #Password: ignition
+
+    #Gateway running on localhost:
+      #Connect URL: jdbc:postgresql://postgres.localtest.me:5430/postgres
+    #Gateway running in dockerstack:
+      #Connect URL: jdbc:postgresql://postgres:5432/postgres  
+  postgresdb:
+    image: postgres
+    hostname: ${POSTG_HOSTNAME:-postgres}
+    container_name: ${POSTG_CONTAINER:-postgres}
+    volumes:
+      - postgData:/var/lib/postgresql/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${POSTG_HOSTNAME:-postgres}
+    environment:
+      POSTGRES_DB: ${POSTG_DB:-postgres}
+      POSTGRES_USER: ${POSTG_USER:-ignition}
+      POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
+    
+    
+    ports:
+      - ${POSTG_PORT:-5430}:5432
+    networks:
+      - default
+  #-----------------------------------------------------------------------------------------------------------------------------
+  #MYSQL Ignition Connection Settings
+      #Name: MySQL
+      #Username: MySQLadmin
+      #Password: MySQLpassword
+ 
+  #***requires installation of the jdbc driver (mysql-connector-j-x.x.xx.jar) if using MySQL Driver
+    #Gateway running on localhost:
+      #Connect URL: jdbc:mysql://mysql.localtest.me:3305/mysql
+    #Gateway running in dockerstack:
+      #Connect URL: jdbc:sqlserver://mssql:1433 
+  
+  #***using MariaDB Driver
+    #Gateway running on localhost:
+      #Connect URL: jdbc:mariadb://mysql.localtest.me:3305/mysql
+    #Gateway running in dockerstack:
+      #Connect URL: jdbc:mariadb://mssql:1433  
+  
+  mysql:
+    image: mysql
+    hostname: ${MYSQL_HOSTNAME:-mysql}
+    container_name: ${MYSQL_CONTAINER:-mysql}
+    volumes:
+      - mysqlData:/var/opt/mysql
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${MYSQL_HOSTNAME:-mysql}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-MySQLroot}
+      MYSQL_USER: ${MYSQL_USERNAME:-MySQLadmin}
+      MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD:-MySQLpassword}
+      MYSQL_DATABASE: ${MYSQL_DB:-mysql}
+    ports:
+      - ${MYSQL_PORT:-3305}:3306
+    networks:
+      - default
+
+
+  #-----------------------------------------------------------------------------------------------------------------------------
+  #MSSQL Ignition Connection Settings
+      #Name: MSSQL
+      #Username: sa
+      #Password: MSSQLRoot1!
+      #Extra Connection Properties: databaseName=mssql *this may be different depending on what database you create on Mircosoft SQL Server Managment Studio
+
+    #Gateway running on localhost:
+      #Connect URL: jdbc:sqlserver://mssql.localtest.me:1435
+    #Gateway running in dockerstack:
+      #Connect URL: jdbc:sqlserver://mssql:1433 
+  
+  #Mircosoft SQL Server Managment Studio
+    #Server name: mssql.localtest.me,1435
+    #Login: sa
+    #Password: MSSQLRoot1!
+
+    #****A new database will need to be created (mssql)
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server
+    hostname: ${MSSQL_HOSTNAME:-mssql}
+    container_name: ${MSSQL_CONTAINER:-mssql}
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${MSSQL_HOSTNAME:-mssql}
+    environment:
+      ACCEPT_EULA: 'Y'
+      # The Product ID (Edition) that the container will run with
+      #  Developer | Express | Standard | Enterprise | EnterpriseCore
+      MSSQL_PID: ${MSSQL_VERSION:-Express}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-MSSQLRoot1!}
+      
+    ports:
+      - ${MSSQL_PORT:-1435}:1433
+    volumes:
+      # Use a volume to store DB data to preserve state between container restarts
+      - mssqlData:/var/opt/mssql
+    networks:
+      - default
+#    networks:
+#      default:
+#        aliases: 
+#          - mssql
+
+  #-----------------------------------------------------------------------------------------------------------------------------
+  #MongoDB Ignition Connection Settings
+      #Name: LocalMongo
+      #Connection Scheme: mongodb
+      #Database: ignition
+        #needs to be setup via http://mongodb-express.localtest.me/
+      #Username: admin
+      #Password: password
+
+    #Gateway running on localhost:
+      #Connection Hosts: mongodb.localtest.me:27017
+    #Gateway running in dockerstack:
+      #Connection Hosts: mongodb:27017
+  mongodb:
+    image: mongo
+    hostname: ${MONGO_HOSTNAME:-mongodb}
+    container_name: ${MONGO_CONTAINER:-mongodb}
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${MONGO_HOSTNAME:-mongodb}
+    restart: always
+    ports:
+      - ${MONGO_PORT:-27017}:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+    volumes:
+      - mongoData:/data/db
+    networks:
+      - default
+#    networks:
+#      default:
+#        aliases: 
+#          - mongodb
+    healthcheck:
+      test:  echo 'db.runCommand("ping").ok' | mongosh ${MONGO_HOSTNAME:-mongodb}.${TRAF_HOST:-localtest.me}/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  #-----------------------------------------------------------------------------------------------------------------------------
+  #MongoDB Management
+    #Root Login for http://mongodb-express.localtest.me/
+      #Username: admin
+      #Password: pass
+
+  mongo-express:
+    image: mongo-express
+    hostname: ${MONGO_EXPRESS_HOSTNAME:-mongodb-express}
+    container_name: ${MONGO_EXPRESS_CONTAINER:-mongodb-express}
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${MONGO_EXPRESS_HOSTNAME:-mongodb-express}
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USERNAME:-admin}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD:-password}
+      - ME_CONFIG_MONGODB_SERVER=${MONGO_HOSTNAME:-mongodb}
+    #  - ME_CONFIG_MONGODB_PORT=${MONGO_PORT:-27017}
+    networks:
+      - default
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  #-----------------------------------------------------------------------------------------------------------------------------
+networks:
+  #net:
+   # driver: bridge
+  default:
+    external: true
+    name: proxy
+    driver: bridge
+
+volumes:
+  ignData:
+  postgData:
+  mysqlData:
+  mssqlData:
+  mongoData:
