@@ -1,6 +1,7 @@
+#docker compose --env-file variables.env up -d
+#docker compose --env-file variables.env down -v
 services:
   ignition-start:
-    #image: inductiveautomation/ignition:nightly
     image: inductiveautomation/ignition:${IGN_VERSION:-latest}
     container_name: ${IGN_CONTAINER:-ignition-demo}
     hostname: ${IGN_HOSTNAME:-ignition-demo}
@@ -21,8 +22,6 @@ services:
       GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
       IGNITION_EDITION: ${IGN_EDITION:-standard}
       TZ: ${IGN_TZ:-America/NewYork}
-    env_file:
-      - ./variables.env
     command: >
       -n ${IGN_GATEWAY_NAME:-Demo}
       -h 80
@@ -57,8 +56,6 @@ services:
       POSTGRES_DB: ${POSTG_DB:-postgres}
       POSTGRES_USER: ${POSTG_USER:-ignition}
       POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
-    env_file:
-      - ./variables.env
     ports:
       - ${POSTG_PORT:-5430}:5432
     networks:
@@ -96,8 +93,6 @@ services:
       MYSQL_USER: ${MYSQL_USERNAME:-MySQLadmin}
       MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD:-MySQLpassword}
       MYSQL_DATABASE: ${MYSQL_DB:-mysql}
-    env_file:
-      - ./variables.env
     ports:
       - ${MYSQL_PORT:-3305}:3306
     networks:
@@ -137,21 +132,14 @@ services:
       # The Product ID (Edition) that the container will run with
       #  Developer | Express | Standard | Enterprise | EnterpriseCore
       MSSQL_PID: ${MSSQL_VERSION:-Express}
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-MSSQLRoot1!}
-    env_file:
-      - ./variables.env      
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-MSSQLRoot1!}   
     ports:
       - ${MSSQL_PORT:-1435}:1433
     volumes:
-      # Use a volume to store DB data to preserve state between container restarts
       - mssqlData:/var/opt/mssql
     networks:
       - default
-    profiles: ["mssql"]
-#    networks:
-#      default:
-#        aliases: 
-#          - mssql
+    #profiles: ["mssql"]
 
   #-----------------------------------------------------------------------------------------------------------------------------
   #MongoDB Ignition Connection Settings
@@ -174,21 +162,16 @@ services:
       - traefik.enable=true
       - traefik.hostname=${MONGO_HOSTNAME:-mongodb}
     restart: always
-#    ports:
-#      - ${MONGO_PORT:-27017}:27017
+    ports:
+      - ${MONGO_PORT:-27017}:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
-    env_file:
-      - ./variables.env
     volumes:
       - mongoData:/data/db
     networks:
       - default
-#    networks:
-#      default:
-#        aliases: 
-#          - mongodb
+
     healthcheck:
       test:  echo 'db.runCommand("ping").ok' | mongosh ${MONGO_HOSTNAME:-mongodb}.${TRAF_HOST:-localtest.me}/test --quiet
       interval: 10s
@@ -226,8 +209,6 @@ services:
 
   #-----------------------------------------------------------------------------------------------------------------------------
 networks:
-  #net:
-   # driver: bridge
   default:
     external: true
     name: proxy
