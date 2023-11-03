@@ -8,10 +8,10 @@ services:
     volumes:
       - ignData:/usr/local/bin/ignition/data
       #Ignition module seeds
-      - ./data/MQTT-Engine-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Engine.modl
-      - ./data/MQTT-Distributor-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Distributor.modl
-      - ./data/MQTT-Transmission-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Transmission.modl
-      - ./data/MongoDB Connector-module.modl:/usr/local/bin/ignition/user-lib/modules/MongoDB Connector-module.modl
+      - ./module-init/MQTT-Engine-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Engine.modl
+      - ./module-init/MQTT-Distributor-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Distributor.modl
+      - ./module-init/MQTT-Transmission-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Transmission.modl
+      - ./module-init/MongoDB Connector-module.modl:/usr/local/bin/ignition/user-lib/modules/MongoDB-Connector-module.modl
     labels:
       - traefik.enable=true
       - traefik.hostname=${IGN_HOSTNAME:-ignition-demo}
@@ -41,7 +41,7 @@ services:
     #Gateway running on localhost:
       #Connect URL: jdbc:postgresql://postgres.localtest.me:5430/postgres
     #Gateway running in dockerstack:
-      #Connect URL: jdbc:postgresql://postgres:5432/postgres  
+      #Connect URL: jdbc:postgresql://postgres/postgres  
   postgresdb:
     image: postgres
     hostname: ${POSTG_HOSTNAME:-postgres}
@@ -55,8 +55,6 @@ services:
       POSTGRES_DB: ${POSTG_DB:-postgres}
       POSTGRES_USER: ${POSTG_USER:-ignition}
       POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
-    
-    
     ports:
       - ${POSTG_PORT:-5430}:5432
     networks:
@@ -72,13 +70,13 @@ services:
     #Gateway running on localhost:
       #Connect URL: jdbc:mysql://mysql.localtest.me:3305/mysql
     #Gateway running in dockerstack:
-      #Connect URL: jdbc:sqlserver://mssql:1433 
+      #Connect URL: jdbc:mysql://mysql/mysql
   
   #***using MariaDB Driver
     #Gateway running on localhost:
       #Connect URL: jdbc:mariadb://mysql.localtest.me:3305/mysql
     #Gateway running in dockerstack:
-      #Connect URL: jdbc:mariadb://mssql:1433  
+      #Connect URL: jdbc:mariadb://mysql/mysql
   
   mysql:
     image: mysql
@@ -111,7 +109,7 @@ services:
     #Gateway running on localhost:
       #Connect URL: jdbc:sqlserver://mssql.localtest.me:1435
     #Gateway running in dockerstack:
-      #Connect URL: jdbc:sqlserver://mssql:1433 
+      #Connect URL: jdbc:sqlserver://mssql
   
   #Mircosoft SQL Server Managment Studio
     #Server name: mssql.localtest.me,1435
