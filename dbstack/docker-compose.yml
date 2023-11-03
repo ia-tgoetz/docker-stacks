@@ -8,10 +8,10 @@ services:
     volumes:
       - ignData:/usr/local/bin/ignition/data
       #Ignition module seeds
-      - ./module-init/MQTT-Engine-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Engine.modl
-      - ./module-init/MQTT-Distributor-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Distributor.modl
-      - ./module-init/MQTT-Transmission-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Transmission.modl
-      - ./module-init/MongoDB Connector-module.modl:/usr/local/bin/ignition/user-lib/modules/MongoDB-Connector-module.modl
+      #- ./module-init/MQTT-Engine-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Engine.modl
+      #- ./module-init/MQTT-Distributor-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Distributor.modl
+      #- ./module-init/MQTT-Transmission-signed.modl:/usr/local/bin/ignition/user-lib/modules/MQTT-Transmission.modl
+      #- ./dbstack/module-init/MongoDB Connector-module.modl:/usr/local/bin/ignition/user-lib/modules/MongoDB-Connector-module.modl
     labels:
       - traefik.enable=true
       - traefik.hostname=${IGN_HOSTNAME:-ignition-demo}
@@ -21,6 +21,8 @@ services:
       GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
       IGNITION_EDITION: ${IGN_EDITION:-standard}
       TZ: ${IGN_TZ:-America/NewYork}
+    env_file:
+      - ./variables.env
     command: >
       -n ${IGN_GATEWAY_NAME:-Demo}
       -h 80
@@ -55,6 +57,8 @@ services:
       POSTGRES_DB: ${POSTG_DB:-postgres}
       POSTGRES_USER: ${POSTG_USER:-ignition}
       POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
+    env_file:
+      - ./variables.env
     ports:
       - ${POSTG_PORT:-5430}:5432
     networks:
@@ -92,6 +96,8 @@ services:
       MYSQL_USER: ${MYSQL_USERNAME:-MySQLadmin}
       MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD:-MySQLpassword}
       MYSQL_DATABASE: ${MYSQL_DB:-mysql}
+    env_file:
+      - ./variables.env
     ports:
       - ${MYSQL_PORT:-3305}:3306
     networks:
@@ -132,7 +138,8 @@ services:
       #  Developer | Express | Standard | Enterprise | EnterpriseCore
       MSSQL_PID: ${MSSQL_VERSION:-Express}
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-MSSQLRoot1!}
-      
+    env_file:
+      - ./variables.env      
     ports:
       - ${MSSQL_PORT:-1435}:1433
     volumes:
@@ -172,6 +179,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+    env_file:
+      - ./variables.env
     volumes:
       - mongoData:/data/db
     networks:
@@ -206,6 +215,8 @@ services:
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD:-password}
       - ME_CONFIG_MONGODB_SERVER=${MONGO_HOSTNAME:-mongodb}
       - ME_CONFIG_MONGODB_PORT=${MONGO_PORT:-27017}
+    env_file:
+      - ./variables.env
     networks:
       - default
     depends_on:
