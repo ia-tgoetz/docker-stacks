@@ -25,7 +25,7 @@ services:
       GATEWAY_ADMIN_USERNAME: ${IGN_USERNAME:-admin}
       GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
       IGNITION_EDITION: ${IGN_EDITION:-standard}
-      TZ: ${IGN_TZ:-America/NewYork}
+      TZ: ${IGN_TZ:-America/New_York}
     command: >
       -n ${IGN_GATEWAY_NAME:-Demo}
       -h 80
@@ -61,6 +61,7 @@ services:
       POSTGRES_DB: ${POSTG_DB:-postgres}
       POSTGRES_USER: ${POSTG_USER:-ignition}
       POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
+      TZ: ${IGN_TZ:-America/New_York}
     ports:
       - ${POSTG_PORT:-5430}:5432
     networks:
@@ -98,6 +99,7 @@ services:
       MYSQL_USER: ${MYSQL_USERNAME:-MySQLadmin}
       MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD:-MySQLpassword}
       MYSQL_DATABASE: ${MYSQL_DB:-mysql}
+      TZ: ${IGN_TZ:-America/New_York}
     ports:
       - ${MYSQL_PORT:-3305}:3306
     networks:
@@ -137,7 +139,8 @@ services:
       # The Product ID (Edition) that the container will run with
       #  Developer | Express | Standard | Enterprise | EnterpriseCore
       MSSQL_PID: ${MSSQL_VERSION:-Express}
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-MSSQLRoot1!}   
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-MSSQLRoot1!}
+      TZ: ${IGN_TZ:-America/New_York}   
     ports:
       - ${MSSQL_PORT:-1435}:1433
     volumes:
@@ -172,8 +175,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
-    volumes:
-      - mongoData:/data/db
+      TZ: ${IGN_TZ:-America/New_York}
     networks:
       - default
 
@@ -203,8 +205,7 @@ services:
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD:-password}
       - ME_CONFIG_MONGODB_SERVER=${MONGO_HOSTNAME:-mongodb}
       - ME_CONFIG_MONGODB_PORT=${MONGO_PORT:-27017}
-    env_file:
-      - ./variables.env
+      
     networks:
       - default
     depends_on:
@@ -213,15 +214,39 @@ services:
     profiles: ["mongodb-express"]
 
   #-----------------------------------------------------------------------------------------------------------------------------
+  mail:
+    image: inbucket/inbucket
+    #hostname: ${MAIL_HOSTNAME:-mail}
+    #container_name: ${MAIL_CONTAINER:-mail}
+    restart: unless-stopped
+    #labels:
+    #  - traefik.enable=true
+    #  - traefik.hostname=${MAIL_HOSTNAME:-mail}
+    ports:
+      - ${MAIL_SMTP_PORT:-2500}:2500
+      - ${MAIL_POP3_PORT:-1100}:1100
+      - ${MAIL_HTTP_PORT:-9100}:9000
+    volumes:
+        - mailConfig:/config
+        - mailStorage:/storage
+    networks:
+      - net
+    # Require the profile "mail" for this container to run
+    #  Use environmental variable "COMPOSE_PROFILES" with comma separated string
+    profiles: ["mail"]
+
 networks:
   default:
     external: true
     name: proxy
     driver: bridge
-
+  net:
+    driver: bridge
 volumes:
   ignData:
   postgData:
   mysqlData:
   mssqlData:
   mongoData:
+  mailConfig:
+  mailStorage:
