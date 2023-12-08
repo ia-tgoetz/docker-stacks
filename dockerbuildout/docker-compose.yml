@@ -1,0 +1,113 @@
+#docker compose --env-file variables.env up -d
+#docker compose --env-file variables.env down -v
+
+services:
+  ignition-dockerbuild:
+    image: inductiveautomation/ignition:${IGN_VERSION:-latest}
+    container_name: ${IGN_CONTAINER:-ignition-demo}
+    hostname: ${IGN_HOSTNAME:-ignition-demo}
+    user: 0:0
+    volumes:
+      # Ignition data
+      - ignData:/usr/local/bin/ignition/data
+      #Ignition module seeds
+      - ./module-init/MongoDB Connector-module.modl:/usr/local/bin/ignition/user-lib/modules/MongoDB-Connector-module.modl
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_HOSTNAME:-ignition-demo}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_EDITION:-standard}
+      TZ: ${IGN_TZ:-America/New_York}
+    command: >
+      -n ${IGN_GATEWAY_NAME:-Demo}
+      -h 80
+      -s 443
+      -a ${IGN_HOSTNAME:-ignition-demo}
+      --
+      -Dignition.projects.scanFrequency=10
+    networks:
+      - default
+    profiles: ["ignition"]
+  
+  #-----------------------------------------------------------------------------------------------------------------------------  
+  #Postgres Ignition Connection Settings
+      #Name: Postgres
+      #Username: ignition
+      #Password: ignition
+
+    #Gateway running on localhost:
+      #Connect URL: jdbc:postgresql://postgres-dockerbuild.localtest.me:5426/postgres
+    #Gateway running in dockerstack:
+      #Connect URL: jdbc:postgresql://postgres-dockerbuild/postgres  
+  postgres-dockerbuild:
+    image: postgres
+    hostname: ${POSTG_HOSTNAME:-postgres}
+    container_name: ${POSTG_CONTAINER:-postgres}
+    volumes:
+      - postgData:/var/lib/postgresql/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${POSTG_HOSTNAME:-postgres}
+    environment:
+      POSTGRES_DB: ${POSTG_DB:-postgres}
+      POSTGRES_USER: ${POSTG_USER:-ignition}
+      POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
+      TZ: ${IGN_TZ:-America/New_York}
+    ports:
+      - ${POSTG_PORT:-5432}:5432
+    networks:
+      - default
+    profiles: ["postgres"]
+  #-----------------------------------------------------------------------------------------------------------------------------
+  #MongoDB Ignition Connection Settings
+      #Name: LocalMongo
+      #Connection Scheme: mongodb
+      #Database: ignition
+        #needs to be setup via http://mongodb-express.localtest.me/
+      #Username: admin
+      #Password: password
+
+    #Gateway running on localhost:
+      #Connection Hosts: mongodb-dockerbuild.localtest.me:27027
+    #Gateway running in dockerstack:
+      #Connection Hosts: mongodb-dockerbuild:27027
+  mongodb-dockerbuild:
+    image: mongo
+    hostname: ${MONGO_HOSTNAME:-mongodb}
+    container_name: ${MONGO_CONTAINER:-mongodb}
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${MONGO_HOSTNAME:-mongodb}
+    restart: always
+    ports:
+      - ${MONGO_PORT:-27017}:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+      TZ: ${IGN_TZ:-America/New_York}
+    networks:
+      - default
+
+    healthcheck:
+      test:  echo 'db.runCommand("ping").ok' | mongosh ${MONGO_HOSTNAME:-mongodb}.${TRAF_HOST:-localtest.me}/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    profiles: ["mongodb"]
+
+
+networks:
+  default:
+    external: true
+    name: proxy
+    driver: bridge
+  net:
+    driver: bridge
+volumes:
+  ignData:
+  postgData:
+  mongoData:

@@ -1,0 +1,163 @@
+#docker compose --env-file variables.env up -d
+#docker compose --env-file variables.env down -v
+
+services:
+  ignition-backend:
+    image: inductiveautomation/ignition:${IGN_VERSION:-latest}
+    container_name: ${IGN_CONTAINER:-ignition-demo}
+    hostname: ${IGN_HOSTNAME:-ignition-demo}
+    user: 0:0
+    volumes:
+      # Ignition data
+      - ignData:/usr/local/bin/ignition/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_HOSTNAME:-ignition-demo}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_EDITION:-standard}
+      TZ: ${IGN_TZ:-America/New_York}
+    command: >
+      -n ${IGN_GATEWAY_NAME:-Demo}
+      -h 80
+      -s 443
+      -a ${IGN_HOSTNAME:-ignition-demo}
+      --
+      -Dignition.projects.scanFrequency=10
+    networks:
+      - default
+    profiles: ["ignition-backend"]
+
+  ignition-redundancy:
+    image: inductiveautomation/ignition:${IGN_REDU_VERSION:-latest}
+    container_name: ${IGN_REDU_CONTAINER:-ignition-demo}
+    hostname: ${IGN_REDU_HOSTNAME:-ignition-demo}
+    user: 0:0
+    volumes:
+      # Ignition data
+      - ignReduData:/usr/local/bin/ignition/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${IGN_REDU_HOSTNAME:-ignition-demo}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${IGN_REDU_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${IGN_REDU_PASSWORD:-password}
+      IGNITION_EDITION: ${IGN_REDU_EDITION:-standard}
+      TZ: ${IGN_REDU_TZ:-America/New_York}
+    command: >
+      -n ${IGN_REDU_GATEWAY_NAME:-Demo}
+      -h 80
+      -s 443
+      -a ${IGN_REDU_HOSTNAME:-ignition-demo}
+      --
+      -Dignition.projects.scanFrequency=10
+    networks:
+      - default
+    profiles: ["redundancy"]
+
+
+  ignition-edge1:
+    image: inductiveautomation/ignition:${EDGE1_VERSION:-latest}
+    container_name: ${EDGE1_CONTAINER:-ignition-demo}
+    hostname: ${EDGE1_HOSTNAME:-ignition-demo}
+    user: 0:0
+    volumes:
+      # Ignition data
+      - edge1:/usr/local/bin/ignition/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${EDGE1_HOSTNAME:-ignition-demo}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${EDGE1_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${EDGE1_PASSWORD:-password}
+      IGNITION_EDITION: ${EDGE1_EDITION:-edge}
+      TZ: ${IGN_TZ:-America/New_York}
+    command: >
+      -n ${EDGE1_GATEWAY_NAME:-Demo}
+      -h 80
+      -s 443
+      -a ${EDGE1_HOSTNAME:-ignition-demo}
+      --
+      -Dignition.projects.scanFrequency=10
+    networks:
+      - default
+    profiles: ["edge1"]
+
+  ignition-edge2:
+    image: inductiveautomation/ignition:${EDGE2_VERSION:-latest}
+    container_name: ${EDGE2_CONTAINER:-ignition-demo}
+    hostname: ${EDGE2_HOSTNAME:-ignition-demo}
+    user: 0:0
+    volumes:
+      # Ignition data
+      - edge2:/usr/local/bin/ignition/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${EDGE2_HOSTNAME:-ignition-demo}
+    environment:
+      ACCEPT_IGNITION_EULA: 'Y'
+      GATEWAY_ADMIN_USERNAME: ${EDGE2_USERNAME:-admin}
+      GATEWAY_ADMIN_PASSWORD: ${EDGE2_PASSWORD:-password}
+      IGNITION_EDITION: ${EDGE2_EDITION:-edge}
+      TZ: ${IGN_TZ:-America/New_York}
+    command: >
+      -n ${EDGE2_GATEWAY_NAME:-Demo}
+      -h 80
+      -s 443
+      -a ${EDGE2_HOSTNAME:-ignition-demo}
+      --
+      -Dignition.projects.scanFrequency=10
+    networks:
+      - default
+    profiles: ["edge2"]
+
+  #-----------------------------------------------------------------------------------------------------------------------------  
+  #Postgres Ignition Connection Settings
+      #Name: Postgres
+      #Username: ignition
+      #Password: ignition
+
+    #Gateway running on localhost:
+      #Connect URL: jdbc:postgresql://postgres.localtest.me:5430/postgres
+    #Gateway running in dockerstack:
+      #Connect URL: jdbc:postgresql://postgres/postgres  
+  postgresso:
+    image: postgres
+    hostname: postgresso
+    container_name: postgresso
+    volumes:
+      - postgData:/var/lib/postgresql/data
+    labels:
+      - traefik.enable=true
+      - traefik.hostname=${POSTG_HOSTNAME:-postgres}
+    environment:
+      POSTGRES_DB: ${POSTG_DB:-postgres}
+      POSTGRES_USER: ${POSTG_USER:-ignition}
+      POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
+      TZ: ${IGN_TZ:-America/New_York}
+    ports:
+      - 5429:5432
+    networks:
+      - default
+    profiles: ["postgres"]
+  #-----------------------------------------------------------------------------------------------------------------------------
+
+networks:
+  default:
+    external: true
+    name: proxy
+    driver: bridge
+  net:
+    driver: bridge
+volumes:
+  ignData:
+  ignReduData:
+  edge1:
+  edge2:
+  postgData:
+  mailConfig:
+  mailStorage:
