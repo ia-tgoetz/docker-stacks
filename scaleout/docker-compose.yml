@@ -19,6 +19,7 @@ services:
       GATEWAY_ADMIN_PASSWORD: ${IGN_PASSWORD:-password}
       IGNITION_EDITION: ${IGN_EDITION:-standard}
       TZ: ${IGN_TZ:-America/New_York}
+      DISABLE_QUICKSTART: ${ING_SKIP_QUICKSTART:-false}
     command: >
       -n ${IGN_GATEWAY_NAME:-Demo}
       -h 80
@@ -124,11 +125,11 @@ services:
     #Gateway running on localhost:
       #Connect URL: jdbc:postgresql://postgres.localtest.me:5430/postgres
     #Gateway running in dockerstack:
-      #Connect URL: jdbc:postgresql://postgres/postgres  
+      #Connect URL: jdbc:postgresql://pg-scalout/postgres  
   postgresso:
     image: postgres
-    hostname: postgresso
-    container_name: postgresso
+    hostname: ${POSTG_HOSTNAME:-postgres}
+    container_name: ${POSTG_CONTAINER:-ignition-demo}
     volumes:
       - postgData:/var/lib/postgresql/data
     labels:
@@ -140,7 +141,7 @@ services:
       POSTGRES_PASSWORD: ${POSTG_PASSWORD:-ignition}
       TZ: ${IGN_TZ:-America/New_York}
     ports:
-      - 5429:5432
+      - ${POSTG_PORT:-5432}:5432
     networks:
       - default
     profiles: ["postgres"]
